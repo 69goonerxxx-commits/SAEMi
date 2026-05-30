@@ -1268,6 +1268,11 @@
           <div class="key-note">Get a free key at <strong>console.groq.com</strong>. Your key is saved only on this device.</div>
         </div>
         <div class="field">
+          <label>WORKER PROXY URL <span style="font-size:10px;color:var(--muted);font-weight:400;text-transform:none;">(optional — hides your API keys server-side)</span></label>
+          <input type="url" id="cfg-worker-url" placeholder="https://saemi.yourname.workers.dev" autocomplete="off"/>
+          <div class="key-note">Deploy <strong>SAEMi_worker.js</strong> to Cloudflare Workers, paste the URL here, and your API keys move off this device entirely. Leave blank to call AI providers directly.</div>
+        </div>
+        <div class="field">
           <label>MODEL</label>
           <select id="cfg-model"></select>
           <div class="model-note" id="model-note-text">Choose a model for the selected provider.</div>
@@ -1725,7 +1730,7 @@ let config = {
   memoryLength:50, timeAware:'yes', proactive:'yes', inactivityMinutes:30,
   bubbleStyle:'transparent', permanentMemory:'', privateNotes:'', personalityText:'', dislikesText:'', fearsText:'', dailyNotes:'',
   provider:'gemini', model:'gemini-2.5-flash',
-  apiKeys:{ gemini:'', claude:'', deepseek:'', groq:'' },
+  apiKeys:{ gemini:'', claude:'', deepseek:'', groq:'' }, workerUrl:'',
   selfKnowledge:'',
   appearanceText:'', lunaText:'',
   fontSize:'medium', bubbleRoundness:18, bgSolidColor:'', typingStyle:'dots',
@@ -2329,7 +2334,7 @@ function loadProfile(id) {
     memoryLength:50, timeAware:'yes', proactive:'yes', inactivityMinutes:30,
     bubbleStyle:'transparent', permanentMemory:'', privateNotes:'', personalityText:'', dislikesText:'', fearsText:'', dailyNotes:'',
     provider:'gemini', model:'gemini-2.5-flash', searchGrounding:'off',
-    apiKeys:{ gemini:'', claude:'', deepseek:'', groq:'' },
+    apiKeys:{ gemini:'', claude:'', deepseek:'', groq:'' }, workerUrl:'',
     selfKnowledge:'',
     appearanceText:'', lunaText:'',
     fontSize:'medium', bubbleRoundness:18, bgSolidColor:'', typingStyle:'dots',
@@ -2539,8 +2544,11 @@ async function callGemini(history, imageData) {
     body.tools = [{ google_search:{} }];
   }
 
+  const _proxy = config.workerUrl?.trim();
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${getActiveApiKey()}`,
+    _proxy
+      ? `${_proxy}/proxy/gemini?model=${encodeURIComponent(model)}`
+      : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${getActiveApiKey()}`,
     { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal }
   );
   const data = await res.json();
@@ -2593,21 +2601,19 @@ async function callClaude(history, imageData) {
     return { role, content: m.content || '' };
   });
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': getActiveApiKey(),
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: config.model,
-      max_tokens: 1000,
-      system: buildSystemPrompt(),
-      messages: mappedMessages
-    }),
-    signal
-  });
+  const _claudeProxy = config.workerUrl?.trim();
+  const res = await fetch(
+    _claudeProxy ? `${_claudeProxy}/proxy/claude` : 'https://api.anthropic.com/v1/messages',
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(_claudeProxy ? {} : { 'x-api-key': getActiveApiKey(), 'anthropic-version': '2023-06-01' }),
+      },
+      body: JSON.stringify({ model: config.model, max_tokens: 1000, system: buildSystemPrompt(), messages: mappedMessages }),
+      signal
+    }
+  );
   const data = await res.json();
   if (data.error) throw new Error(parseApiError(data.error.message, 'Claude'));
   return data.content?.[0]?.text || '';
@@ -2625,20 +2631,21 @@ async function callOpenAICompat(history, endpoint) {
     ...filtered.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content || '' }))
   ];
 
+  const _oaiProxy = config.workerUrl?.trim();
+  const _oaiProvider = config.provider; // capture before async gap
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${getActiveApiKey()}`
+    ...(_oaiProxy ? {} : { 'Authorization': `Bearer ${getActiveApiKey()}` }),
   };
+  const resolvedEndpoint = _oaiProxy
+    ? `${_oaiProxy}/proxy/${_oaiProvider}`
+    : endpoint;
 
-  const res = await fetch(endpoint, {
+  const res = await fetch(resolvedEndpoint, {
     method: 'POST',
     headers,
-    body: JSON.stringify({
-      model: config.model,
-      max_tokens: 1000,
-      messages: mappedMessages
-    }),
-    signal // C4/C8 fix: wire abort signal so stop button works for DeepSeek and Groq
+    body: JSON.stringify({ model: config.model, max_tokens: 1000, messages: mappedMessages }),
+    signal
   });
   const data = await res.json();
   if (data.error) throw new Error(parseApiError(data.error.message, config.provider === 'deepseek' ? 'DeepSeek' : 'Groq'));
@@ -2674,7 +2681,8 @@ function parseApiError(rawMessage, provider) {
 }
 
 async function callAPI(history, imageData) {
-  if (!getActiveApiKey()) throw new Error('No API key set. Go to Settings → Behavior to add your API key.');
+  const _hasProxy = !!(config.workerUrl?.trim());
+  if (!_hasProxy && !getActiveApiKey()) throw new Error('No API key — go to Settings → Behavior to add your API key, or configure a Worker Proxy URL.');
   // C1 fix: warn when images are attached but the active provider doesn't support multimodal input
   const imageArr = Array.isArray(imageData) ? imageData : (imageData ? [imageData] : []);
   if (imageArr.length && config.provider !== 'gemini' && config.provider !== 'claude') {
@@ -2740,32 +2748,31 @@ const _RAW_CALLS_MAX = 2;
 // maxTokens defaults to 50 (enough for single-word/emoji responses).
 // Callers that need longer output (captions, notes, image prompts) pass a higher value.
 async function callAPIRaw(prompt, maxTokens = 50) {
-  if (!getActiveApiKey()) return '';
-  // Skip background calls if the user already cancelled the current main generation
+  const _rawProxy = config.workerUrl?.trim();
+  if (!_rawProxy && !getActiveApiKey()) return '';
   if (currentAbortController && currentAbortController.signal.aborted) return '';
-  // Shed excess concurrent background calls gracefully
   if (_rawCallsInFlight >= _RAW_CALLS_MAX) return '';
   _rawCallsInFlight++;
   try {
     switch (config.provider) {
       case 'gemini': {
-        const controller = new AbortController();
         const rawModel = config.model || 'gemini-2.5-flash';
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${rawModel}:generateContent?key=${getActiveApiKey()}`,
-          { method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ contents:[{role:'user',parts:[{text:prompt}]}], generationConfig:{maxOutputTokens:maxTokens} }),
-            signal: controller.signal }
-        );
+        const rawUrl = _rawProxy
+          ? `${_rawProxy}/proxy/gemini?model=${encodeURIComponent(rawModel)}`
+          : `https://generativelanguage.googleapis.com/v1beta/models/${rawModel}:generateContent?key=${getActiveApiKey()}`;
+        const res = await fetch(rawUrl, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ contents:[{role:'user',parts:[{text:prompt}]}], generationConfig:{maxOutputTokens:maxTokens} }),
+        });
         const data = await res.json();
-        // Filter out thought blocks — only keep non-thought text parts
         const parts = data.candidates?.[0]?.content?.parts || [];
         return stripLeakedThinking(parts.filter(p => p.text && !p.thought).map(p => p.text).join('').trim()) || '';
       }
       case 'claude': {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const rawUrl = _rawProxy ? `${_rawProxy}/proxy/claude` : 'https://api.anthropic.com/v1/messages';
+        const res = await fetch(rawUrl, {
           method: 'POST',
-          headers: { 'x-api-key': getActiveApiKey(), 'anthropic-version':'2023-06-01', 'content-type':'application/json' },
+          headers: { 'content-type': 'application/json', ...(_rawProxy ? {} : { 'x-api-key': getActiveApiKey(), 'anthropic-version':'2023-06-01' }) },
           body: JSON.stringify({ model: config.model, max_tokens: maxTokens, messages:[{ role:'user', content: prompt }] })
         });
         const data = await res.json();
@@ -2773,13 +2780,11 @@ async function callAPIRaw(prompt, maxTokens = 50) {
       }
       case 'deepseek':
       case 'groq': {
-        const endpoints = {
-          deepseek: 'https://api.deepseek.com/chat/completions',
-          groq: 'https://api.groq.com/openai/v1/chat/completions',
-        };
-        const headers = { 'Content-Type':'application/json', 'Authorization':`Bearer ${getActiveApiKey()}` };
-        const res = await fetch(endpoints[config.provider], {
-          method: 'POST', headers,
+        const endpoints = { deepseek: 'https://api.deepseek.com/chat/completions', groq: 'https://api.groq.com/openai/v1/chat/completions' };
+        const rawUrl = _rawProxy ? `${_rawProxy}/proxy/${config.provider}` : endpoints[config.provider];
+        const res = await fetch(rawUrl, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', ...(_rawProxy ? {} : { 'Authorization':`Bearer ${getActiveApiKey()}` }) },
           body: JSON.stringify({ model: config.model, max_tokens: maxTokens, messages:[{ role:'user', content: prompt }] })
         });
         const data = await res.json();
@@ -5441,6 +5446,7 @@ async function checkAwayReturn() {
 
 
 let _notifPermissionAsked = false;
+let _pwaIconDataUrl = null; // set by PWA bootstrap — used as notification icon
 function _requestNotifPermission() {
   if (_notifPermissionAsked || !('Notification' in window)) return;
   _notifPermissionAsked = true;
@@ -5448,14 +5454,16 @@ function _requestNotifPermission() {
 }
 function _sendBackgroundNotification(senderName, text) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  if (!document.hidden) return; // only when tab is in background
-  try {
-    new Notification(senderName || 'SÆMi', {
-      body: text ? text.slice(0, 120) : '…',
-      icon: '/favicon.ico',
-      tag: 'saemi-msg', // replace previous notification rather than stacking
-    });
-  } catch(e) {}
+  if (!document.hidden) return;
+  const title = senderName || 'SÆMi';
+  const body  = text ? text.slice(0, 120) : '…';
+  const icon  = _pwaIconDataUrl || undefined;
+  // Prefer SW-based notification — more reliable when backgrounded on Android
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type:'SHOW_NOTIFICATION', title, body, icon });
+  } else {
+    try { new Notification(title, { body, icon, tag:'saemi-msg' }); } catch(e) {}
+  }
 }
 
 
@@ -6509,6 +6517,7 @@ function populateForm() {
   document.getElementById('cfg-key-claude').value=config.apiKeys.claude||'';
   document.getElementById('cfg-key-deepseek').value=config.apiKeys.deepseek||'';
   document.getElementById('cfg-key-groq').value=config.apiKeys.groq||'';
+  document.getElementById('cfg-worker-url').value=config.workerUrl||'';
   // H3 fix: populate the model dropdown first, then restore the saved model selection.
   // updateProviderUI(false) rebuilds the options; we then set the value manually so
   // re-opening settings always shows the model the user previously chose.
@@ -6537,6 +6546,7 @@ function saveConfigFromForm() {
   config.apiKeys.claude=document.getElementById('cfg-key-claude').value.trim();
   config.apiKeys.deepseek=document.getElementById('cfg-key-deepseek').value.trim();
   config.apiKeys.groq=document.getElementById('cfg-key-groq').value.trim();
+  config.workerUrl=document.getElementById('cfg-worker-url').value.trim().replace(/\/+$/,'');
   config.model=document.getElementById('cfg-model').value;
   config.searchGrounding=document.getElementById('cfg-search-grounding').value||'off';
   config.botName=document.getElementById('cfg-name').value.trim()||'Sam';
@@ -8391,6 +8401,9 @@ function checkAutoNote() {
   const icon512 = buildIcon(512);
   const icon192 = buildIcon(192);
 
+  // Make icon available to _sendBackgroundNotification
+  if (typeof _pwaIconDataUrl !== 'undefined') _pwaIconDataUrl = icon192;
+
   // ── 2. Apple touch icon + favicon ───────────────────
   const touchIcon = document.createElement('link');
   touchIcon.rel = 'apple-touch-icon';
@@ -8427,7 +8440,7 @@ function checkAutoNote() {
   // ── 4. Service worker (HTTPS / localhost only) ───────
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'saemi-v6.8.5';
+const CACHE = 'saemi-v6.9.0';
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.add(self.location.href)).catch(()=>{}));
@@ -8451,6 +8464,34 @@ self.addEventListener('fetch', e => {
         }
         return res;
       }).catch(() => caches.match(self.location.href));
+    })
+  );
+});
+// Show notification posted from the app
+self.addEventListener('message', e => {
+  if (e.data?.type !== 'SHOW_NOTIFICATION') return;
+  const { title, body, icon } = e.data;
+  e.waitUntil(
+    self.registration.showNotification(title || 'SÆMi', {
+      body: body || '…',
+      icon: icon || undefined,
+      badge: icon || undefined,
+      tag: 'saemi-msg',
+      renotify: true,
+      vibrate: [200, 100, 200],
+      data: { url: self.location.href },
+    })
+  );
+});
+// Tap notification → focus or open the app
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url === e.notification.data?.url && 'focus' in c) return c.focus();
+      }
+      return clients.openWindow(e.notification.data?.url || self.location.href);
     })
   );
 });`;
