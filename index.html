@@ -1043,6 +1043,7 @@
       <div id="modal-title">Configure</div>
       <button id="modal-close">✕</button>
     </div>
+    <!-- §§ TAB-BUTTONS §§ -->
     <div id="modal-tabs">
       <button class="tab-btn active" data-tab="persona">🎭 Persona</button>
       <button class="tab-btn" data-tab="scenario">🌍 Scenario</button>
@@ -1057,7 +1058,7 @@
     </div>
     <div id="modal-body">
 
-      <!-- PERSONA -->
+      <!-- §§ TAB-PERSONA §§ -->
       <div class="tab-content active" id="tab-persona">
         <div class="field"><label>BOT NAME</label><input type="text" id="cfg-name" maxlength="32"/></div>
         <div class="field">
@@ -1092,7 +1093,7 @@
         </div>
       </div>
 
-      <!-- SCENARIO -->
+      <!-- §§ TAB-SCENARIO §§ -->
       <div class="tab-content" id="tab-scenario">
         <div class="field"><label>HOW YOU MET / HOW IT STARTED</label><textarea id="cfg-scenario-how" placeholder="How do the two of you know each other? How did this conversation start? (e.g. she found your account online, mutual connection, online community)" style="min-height:80px;"></textarea></div>
         <div class="field"><label>CURRENT CONTEXT</label><textarea id="cfg-scenario-context" placeholder="Where are you right now? What's the physical or situational setting? (e.g. she's home alone, it's late, you're both online)" style="min-height:80px;"></textarea></div>
@@ -1100,7 +1101,7 @@
         <div class="field"><label>RECENT EVENT</label><textarea id="cfg-scenario-event" placeholder="Something that just happened before this chat opened — a callback, an incident, a feeling left hanging." style="min-height:70px;"></textarea></div>
       </div>
 
-      <!-- PERSONALITY -->
+      <!-- §§ TAB-PERSONALITY §§ -->
       <div class="tab-content" id="tab-personality">
         <div class="field"><label>PERSONALITY</label>
           <textarea id="cfg-personality-text" placeholder="Describe how she acts, her quirks, flaws, emotional patterns, texting habits, how she handles different moods…" style="min-height:200px;"></textarea>
@@ -1113,15 +1114,15 @@
         </div>
       </div>
 
-      <!-- RULES -->
+      <!-- §§ TAB-RULES §§ -->
       <div class="tab-content" id="tab-rules">
-        <div class="field"><label>AREAS OF EXPERTISE</label><input type="text" id="cfg-expertise" placeholder="e.g. cooking, music… (comma separated)"/></div>
-        <div class="field"><label>HOBBIES</label><input type="text" id="cfg-hobbies" placeholder="e.g. photography, binge-watching, gaming… (comma separated)"/></div>
-        <div class="field"><label>ALWAYS DO</label><textarea id="cfg-always" placeholder="e.g. Always end with a question." style="min-height:60px;"></textarea></div>
-        <div class="field"><label>FORBIDDEN TOPICS</label><textarea id="cfg-forbidden" placeholder="e.g. Never talk about politics." style="min-height:56px;"></textarea></div>
+        <div class="field"><label>AREAS OF EXPERTISE</label><textarea id="cfg-expertise" placeholder="e.g. cooking, music, photography…" style="min-height:80px;"></textarea></div>
+        <div class="field"><label>HOBBIES</label><textarea id="cfg-hobbies" placeholder="e.g. photography, binge-watching, gaming…" style="min-height:80px;"></textarea></div>
+        <div class="field"><label>ALWAYS DO</label><textarea id="cfg-always" placeholder="e.g. Always end with a question." style="min-height:200px;"></textarea></div>
+        <div class="field"><label>FORBIDDEN TOPICS</label><textarea id="cfg-forbidden" placeholder="e.g. Never talk about politics." style="min-height:160px;"></textarea></div>
       </div>
 
-      <!-- LOOK -->
+      <!-- §§ TAB-LOOK §§ -->
       <div class="tab-content" id="tab-look">
         <div class="field"><label>THEME COLOR</label>
           <div id="color-swatches" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
@@ -1226,7 +1227,7 @@
         </div>
       </div>
 
-      <!-- BEHAVIOR -->
+      <!-- §§ TAB-BEHAVIOR §§ -->
       <div class="tab-content" id="tab-behavior">
         <div class="field"><label>CUSTOM GREETING (leave blank for auto)</label><textarea id="cfg-greeting" placeholder="Leave blank — auto-greets based on time of day." style="min-height:56px;"></textarea></div>
         <div class="field">
@@ -1315,7 +1316,7 @@
         </div>
       </div>
 
-      <!-- WORLD -->
+      <!-- §§ TAB-WORLD §§ -->
       <div class="tab-content" id="tab-world">
         <div class="field">
           <label>WEATHER &amp; AIR QUALITY — OPENWEATHERMAP KEY</label>
@@ -1365,7 +1366,7 @@
         </div>
       </div>
 
-      <!-- STORIES -->
+      <!-- §§ TAB-STORIES §§ -->
       <div class="tab-content" id="tab-stories">
         <div class="field">
           <label>AUTO-STORIES</label>
@@ -1405,7 +1406,7 @@
         <div class="key-note" id="note-status-note" style="margin-top:4px;text-align:center;"></div>
       </div>
 
-      <!-- MEMORY -->
+      <!-- §§ TAB-MEMORY §§ -->
       <div class="tab-content" id="tab-memory">
         <div class="field">
           <label>PERMANENT MEMORY</label>
@@ -1437,7 +1438,7 @@
         </div>
       </div>
 
-      <!-- PROFILES -->
+      <!-- §§ TAB-PROFILES §§ -->
       <div class="tab-content" id="tab-profiles">
         <div class="profile-list" id="profile-list"></div>
         <button class="new-profile-btn" id="new-profile-btn">+ New Profile</button>
@@ -1613,7 +1614,7 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-// STORAGE
+// §§ STORAGE §§
 // ═══════════════════════════════════════════════════
 const store = {
   _db: null,
@@ -1677,7 +1678,7 @@ const store = {
   keys() { return [...this._cache.keys()]; }
 };
 
-const APP_VERSION = '6.7.2';
+const APP_VERSION = '6.9.1'; // §§ APP-VERSION §§
 
 // ── Live context state ─────────────────────────────
 let _weatherCtx  = null;  // { temp, feelsLike, condition, humidity, pm25, pm25Label, pm10, pm10Label, fetchedAt }
@@ -1685,7 +1686,7 @@ let _kpopCtx     = null;  // string[] — filtered headlines
 let _sickState   = null;  // { level, score, since, note, clears } | null
 
 // ═══════════════════════════════════════════════════
-// IMAGE RESIZE
+// §§ IMAGE-RESIZE §§
 // ═══════════════════════════════════════════════════
 function resizeImage(file, maxW, maxH, quality) {
   return new Promise((res, rej) => {
@@ -1717,11 +1718,11 @@ function fileToBase64(file) {
 }
 
 // ═══════════════════════════════════════════════════
-// GLOBAL STATE
+// §§ GLOBAL-STATE §§
 // ═══════════════════════════════════════════════════
 let profiles = [];
 let activeProfileId = '';
-let config = {
+let config = { // §§ CONFIG-DEFAULTS §§
   botName:'Sam', profileImage:null,
   speakingStyleText:'', emojiUsage:'sometimes',
   personaText:'', scenario:'', scenarioHow:'', scenarioContext:'', scenarioMood:'', scenarioEvent:'', greeting:'',
@@ -1766,7 +1767,7 @@ let isGeneratingImage = false;
 let activeQuote = null; // { id, role, content }
 
 // ═══════════════════════════════════════════════════
-// AFFECTION — 0–1000 scale
+// §§ AFFECTION §§
 // ═══════════════════════════════════════════════════
 const AFFECTION_LEVELS = [
   { min:0,   max:149, label:'💜 Stranger',       emoji:'💜' },
@@ -1841,7 +1842,7 @@ function pushAffectionHistory(score) {
 }
 
 // ═══════════════════════════════════════════════════
-// AFFECTION DECAY — tier-based rates (deep bonds are stickier)
+// §§ AFFECTION-DECAY §§
 // ═══════════════════════════════════════════════════
 const TIER_DECAY_RATES = {
   '💜 Stranger':       2.0,  // fragile — fades quickly without contact
@@ -1933,7 +1934,7 @@ function applyDecay() {
 let _decayTierDrop = null;
 
 // ═══════════════════════════════════════════════════
-// MOOD — derived from affection + time of day, zero API cost
+// §§ MOOD §§
 // ═══════════════════════════════════════════════════
 function computeMood() {
   const hour = new Date().getHours();
@@ -2118,7 +2119,7 @@ function renderAffection() {
 }
 
 // ═══════════════════════════════════════════════════
-// AFFINITY PANEL
+// §§ AFFINITY-PANEL §§
 // ═══════════════════════════════════════════════════
 function openAffinityPanel() {
   const overlay = document.getElementById('affinity-overlay');
@@ -2293,7 +2294,7 @@ function drawAffinityGraph(canvas, history) {
 }
 
 // ═══════════════════════════════════════════════════
-// PROFILE STORAGE
+// §§ PROFILE-STORAGE §§
 // ═══════════════════════════════════════════════════
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
@@ -2455,7 +2456,7 @@ function deleteProfile(id) {
 }
 
 // ═══════════════════════════════════════════════════
-// API LAYER — multi-provider
+// §§ API-LAYER §§
 // ═══════════════════════════════════════════════════
 
 // v6.8.2 Bug 3 fix: newer Gemini thinking models (e.g. 3.5 Flash) may surface
@@ -2804,7 +2805,7 @@ function stopGeneration() {
 }
 
 // ═══════════════════════════════════════════════════
-// IMAGE GENERATION (Gemini Imagen 3)
+// §§ IMAGE-GENERATION §§
 // ═══════════════════════════════════════════════════
 function showImageGenSheet() {
   if (config.provider !== 'gemini' || !config.apiKeys.gemini) {
@@ -2967,7 +2968,7 @@ function setLoading(val) {
 }
 
 // ═══════════════════════════════════════════════════
-// SYSTEM PROMPT
+// §§ SYSTEM-PROMPT §§
 // ═══════════════════════════════════════════════════
 function buildSystemPrompt() {
   // KST (UTC+9) — Sam's timezone, no DST
@@ -3219,7 +3220,7 @@ More careful with her words than usual — like she's aware of every one she's c
 }
 
 // ═══════════════════════════════════════════════════
-// CLOCK & THEME
+// §§ CLOCK-THEME §§
 // ═══════════════════════════════════════════════════
 function applyTheme(hex) {
   const n=parseInt(hex.slice(1),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
@@ -3275,7 +3276,7 @@ function applyConfig() {
 }
 
 // ═══════════════════════════════════════════════════
-// BUBBLE STYLES
+// §§ BUBBLE-STYLES §§
 // ═══════════════════════════════════════════════════
 function applyBubbleStyles() {
   const root = document.documentElement;
@@ -3307,7 +3308,7 @@ function updateUIOpacity(bgPct) {
 }
 
 // ═══════════════════════════════════════════════════
-// PROFILE BAR
+// §§ PROFILE-BAR §§
 // ═══════════════════════════════════════════════════
 function renderProfileBar() {
   const bar=document.getElementById('profile-bar');
@@ -3331,7 +3332,7 @@ function renderProfileBar() {
 }
 
 // ═══════════════════════════════════════════════════
-// COPY HELPERS
+// §§ COPY-HELPERS §§
 // ═══════════════════════════════════════════════════
 function copyToClipboard(text) {
   // Try execCommand synchronously first — must stay inside the gesture context
@@ -3354,7 +3355,7 @@ function copyToClipboard(text) {
 }
 
 // ═══════════════════════════════════════════════════
-// MESSAGES
+// §§ MESSAGES §§
 // ═══════════════════════════════════════════════════
 function formatTs(ts) {
   const d=new Date(ts),now=new Date();
@@ -3670,7 +3671,7 @@ function makeMessageEl(msg, hideAvatar = false) {
 }
 
 // ═══════════════════════════════════════════════════
-// SWIPE-TO-REPLY HELPERS
+// §§ SWIPE-REPLY §§
 // ═══════════════════════════════════════════════════
 function quoteMessage(msg, excerpt) {
   if (msg.unsent || msg.generatedImage || !msg.content) return;
@@ -3770,7 +3771,7 @@ document.getElementById('selection-quote-btn').addEventListener('click', () => {
 });
 
 // ═══════════════════════════════════════════════════
-// EDIT MESSAGE
+// §§ EDIT-MESSAGE §§
 // ═══════════════════════════════════════════════════
 function editMessage(id) {
   const idx=messages.findIndex(m=>m.id===id);
@@ -3914,7 +3915,7 @@ function hideTyping() {
 }
 
 // ═══════════════════════════════════════════════════
-// SEND / REGEN / DELETE
+// §§ SEND-REGEN-DELETE §§
 // ═══════════════════════════════════════════════════
 async function sendMessage() {
   const input=document.getElementById('msg-input');
@@ -4188,7 +4189,7 @@ document.getElementById('msg-image-input').addEventListener('change', async func
 document.getElementById('image-preview-remove').addEventListener('click',clearPendingImages);
 
 // ═══════════════════════════════════════════════════
-// ACTION SHEET
+// §§ ACTION-SHEET §§
 // ═══════════════════════════════════════════════════
 function showActionSheet(title, actions) {
   return new Promise(resolve => {
@@ -4335,7 +4336,7 @@ async function regenerateMessage(id) {
 }
 
 // ═══════════════════════════════════════════════════
-// LAST SEEN (KST)
+// §§ LAST-SEEN §§
 // ═══════════════════════════════════════════════════
 function updateLastSeen() {
   const now=new Date(), kst=new Date(now.getTime()+9*60*60*1000);
@@ -4387,7 +4388,7 @@ function renderOnlineDot() {
 }
 
 // ═══════════════════════════════════════════════════
-// HUMANIZED TYPING
+// §§ HUMANIZED-TYPING §§
 // ═══════════════════════════════════════════════════
 // ── Read receipt variable timing ──────────────────────
 // Makes "seen" appear at a human-feeling delay rather than a fixed 600ms.
@@ -4554,7 +4555,7 @@ async function humanizeTyping() {
 }
 
 // ═══════════════════════════════════════════════════
-// EXPORT / IMPORT
+// §§ EXPORT-IMPORT §§
 // ═══════════════════════════════════════════════════
 function exportChat() {
   if(!messages.length){showToast('Nothing to export yet');return;}
@@ -5027,7 +5028,7 @@ document.getElementById('import-images-input').addEventListener('change', functi
 document.getElementById('import-full-input').addEventListener('change', function() { if (!this.files[0]) return; importFull(this.files[0]); this.value = ''; });
 
 // ═══════════════════════════════════════════════════
-// MILESTONES
+// §§ MILESTONES §§
 // ═══════════════════════════════════════════════════
 function getMilestones(){try{return JSON.parse(store.get(`milestones_${activeProfileId}`)||'{}');}catch(e){return {};}}
 function setMilestone(key){const m=getMilestones();m[key]=true;store.set(`milestones_${activeProfileId}`,JSON.stringify(m));}
@@ -5082,7 +5083,7 @@ async function sendMilestoneMessage(key) {
 }
 
 // ═══════════════════════════════════════════════════
-// GREETING
+// §§ GREETING §§
 // ═══════════════════════════════════════════════════
 async function generateGreetingText() {
   if(config.greeting) return config.greeting;
@@ -5221,7 +5222,7 @@ async function sendProactiveMessage() {
 }
 
 // ═══════════════════════════════════════════════════
-// WORLD SYSTEM — Weather, K-pop, Sickness, Away
+// §§ WORLD-SYSTEM §§
 // ═══════════════════════════════════════════════════
 
 // ── 1. Weather & Air Quality (OpenWeatherMap) ───────
@@ -5559,7 +5560,7 @@ async function continueMessage() {
 }
 
 // ═══════════════════════════════════════════════════
-// HOME SCREEN
+// §§ HOME-SCREEN §§
 // ═══════════════════════════════════════════════════
 function showHomeScreen(){updateHomeScreen();document.getElementById('home-screen').classList.add('open');}
 function hideHomeScreen(){document.getElementById('home-screen').classList.remove('open');}
@@ -5598,7 +5599,7 @@ function updateHomeScreen(){
 }
 
 // ═══════════════════════════════════════════════════
-// HOME NOTES ROW
+// §§ HOME-NOTES §§
 // Instagram-style notes strip above the chat list.
 // "Your note" is always first; then one bubble per
 // bot profile that has an active note (< 24h old).
@@ -5755,7 +5756,7 @@ function closeUserNoteEditor() {
 }
 
 // ═══════════════════════════════════════════════════
-// PROFILE PAGE
+// §§ PROFILE-PAGE §§
 // ═══════════════════════════════════════════════════
 function toggleProfileSection(id) {
   const sec=document.getElementById(id); if(!sec) return;
@@ -5850,7 +5851,7 @@ function closeProfilePage() {
 }
 
 // ═══════════════════════════════════════════════════
-// PROFILE SWITCHER SHEET
+// §§ PROFILE-SWITCHER §§
 // Tapping the big avatar on the profile page slides
 // up a sheet showing all profiles. Tap to switch,
 // ✕ to delete, + to create a new one.
@@ -5991,7 +5992,7 @@ function saveProfilePage() {
 }
 
 // ═══════════════════════════════════════════════════
-// PROFILE POSTS
+// §§ PROFILE-POSTS §§
 // ═══════════════════════════════════════════════════
 function getPosts() { try { return JSON.parse(store.get(`posts_${activeProfileId}`) || '[]'); } catch(e) { return []; } }
 
@@ -6355,7 +6356,7 @@ async function submitComment(post, text) {
 }
 
 // ═══════════════════════════════════════════════════
-// SETTINGS
+// §§ SETTINGS §§
 // ═══════════════════════════════════════════════════
 let _lastSettingsTab = 'persona';
 function openSettings(){
@@ -6827,7 +6828,7 @@ function switchTab(name) {
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
 // ═══════════════════════════════════════════════════
-// IMAGE PICKERS (settings)
+// §§ IMAGE-PICKERS §§
 // ═══════════════════════════════════════════════════
 document.getElementById('profile-file-input').addEventListener('change', function() {
   if(!this.files[0]) return;
@@ -6917,7 +6918,7 @@ document.getElementById('bg-remove-btn').addEventListener('click',()=>{
 });
 
 // ═══════════════════════════════════════════════════
-// LIGHTBOX
+// §§ LIGHTBOX §§
 // ═══════════════════════════════════════════════════
 function openLightbox(src, isGenerated) {
   const img = document.getElementById('lightbox-img');
@@ -6940,7 +6941,7 @@ document.getElementById('lightbox-close').addEventListener('click', closeLightbo
 document.getElementById('lightbox-overlay').addEventListener('click', e => { if (e.target.id === 'lightbox-overlay') closeLightbox(); });
 
 // ═══════════════════════════════════════════════════
-// COMMENT SECTION
+// §§ COMMENT-SECTION §§
 // ═══════════════════════════════════════════════════
 let _commentSectionPost = null;
 
@@ -7018,7 +7019,7 @@ document.getElementById('lightbox-download').addEventListener('click', function(
 });
 
 // ═══════════════════════════════════════════════════
-// DAILY NOTES — date-indexed (rolling 60-day window ending today)
+// §§ DAILY-NOTES §§
 // ═══════════════════════════════════════════════════
 function getDailyNoteDates() {
   const dates = [];
@@ -7111,7 +7112,7 @@ document.getElementById('daily-note-date').addEventListener('change', loadDailyN
 document.getElementById('daily-note-text').addEventListener('blur', saveDailyNoteFromUI);
 
 // ═══════════════════════════════════════════════════
-// BANNER CROP
+// §§ BANNER-CROP §§
 // ═══════════════════════════════════════════════════
 (function() {
   let cropImg = null;
@@ -7245,7 +7246,7 @@ document.getElementById('daily-note-text').addEventListener('blur', saveDailyNot
 })();
 
 // ═══════════════════════════════════════════════════
-// GENERIC CROP (profile pic + background)
+// §§ GENERIC-CROP §§
 // ═══════════════════════════════════════════════════
 (function() {
   let cropImg = null;
@@ -7393,7 +7394,7 @@ document.getElementById('daily-note-text').addEventListener('blur', saveDailyNot
 })();
 
 // ═══════════════════════════════════════════════════
-// EVENTS
+// §§ EVENTS §§
 // ═══════════════════════════════════════════════════
 document.getElementById('settings-btn').addEventListener('click',openSettings);
 document.getElementById('modal-close').addEventListener('click',closeSettings);
@@ -7632,7 +7633,7 @@ document.getElementById('post-file-input').addEventListener('change', function()
 });
 
 // ═══════════════════════════════════════════════════
-// CHAT SEARCH (Session P)
+// §§ CHAT-SEARCH §§
 // ═══════════════════════════════════════════════════
 let searchDebounce = null;
 // Re-runs the active search after DOM mutations that replace individual message nodes
@@ -7760,7 +7761,7 @@ function _scrollToSearchMatch(idx) {
 })();
 
 // ═══════════════════════════════════════════════════
-// INIT
+// §§ INIT §§
 // ═══════════════════════════════════════════════════
 function init() {
   loadGlobals(); loadProfile(activeProfileId); loadAffection();
@@ -7800,7 +7801,7 @@ function init() {
 }
 
 // ═══════════════════════════════════════════════════
-// STORIES — 11A-11E
+// §§ STORIES §§
 // ═══════════════════════════════════════════════════
 function openManualStorySheet() {
   // E9 fix: prevent stacking a second overlay if one is already open
@@ -8127,7 +8128,7 @@ function checkAutoStory() {
 }
 
 // ═══════════════════════════════════════════════════
-// NOTES — daily + reactive short status bubble
+// §§ NOTES §§
 // ═══════════════════════════════════════════════════
 function loadNote() {
   try { return JSON.parse(store.get(`note_${activeProfileId}`) || 'null'); } catch(e) { return null; }
