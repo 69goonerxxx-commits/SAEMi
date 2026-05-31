@@ -18,7 +18,7 @@
  *   Variable name: SAEMI_KV  (bind a KV namespace to this name)
  *
  * NEW Cron Trigger:
- *   */30 * * * *        (every 30 minutes)
+ *   every 30 minutes
  * ════════════════════════════════════════════════════
  */
 
