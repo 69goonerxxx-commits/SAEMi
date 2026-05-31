@@ -5,3 +5,8 @@ compatibility_date = "2024-01-01"
 [[kv_namespaces]]
 binding = "SAEMI_KV"
 id = "4f415053d6a44e909b48754351225adb"
+
+[vars]
+ALLOWED_ORIGIN = "https://69goonerxxx-commits.github.io"
+VAPID_PUBLIC_KEY = "BAjbFV6pDKmYAbl-NP_hiyronkoiAxBoteQwa6RITKRs31LmG27SMku8QRSh2C9Jh_P_Rw2WScHsOfs9IdmCu_M"
+VAPID_SUBJECT = "mailto:69goonerxxx@gmail.com"
