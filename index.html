@@ -8590,7 +8590,7 @@ async function setupPushSubscription(reg) {
   if (existing) { syncContext(); return; }
   const base = config.workerUrl.trim();
   const res = await fetch(base + '/vapid-public-key');
-  const { publicKey } = await res.json();
+  const { key: publicKey } = await res.json();
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey)
