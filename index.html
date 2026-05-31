@@ -1721,7 +1721,7 @@ const store = {
   keys() { return [...this._cache.keys()]; }
 };
 
-const APP_VERSION = '6.9.3'; // §§ APP-VERSION §§
+const APP_VERSION = '6.9.5'; // §§ APP-VERSION §§
 
 // ── Live context state ─────────────────────────────
 let _weatherCtx  = null;  // { temp, feelsLike, condition, humidity, pm25, pm25Label, pm10, pm10Label, fetchedAt }
@@ -4134,6 +4134,7 @@ async function sendMessage() {
       appendMessage(botMsg);
     }
     saveCurrentProfile();
+    syncContext();
 
     // ── Typo correction bubble ─────────────────────────
     // Arrives a few seconds after the main reply, like she noticed her own typo.
@@ -6809,7 +6810,7 @@ function saveConfigFromForm() {
   config.fearsText=document.getElementById('cfg-fears-text').value.trim();
   const sel=document.querySelector('.swatch[style*="border: 2px solid #fff"]');
   if(sel) config.themeColor=sel.dataset.color;
-  applyConfig(); saveCurrentProfile(); renderProfileBar(); closeSettings(); showToast('Settings saved ✓'); resetInactivityTimer();
+  applyConfig(); saveCurrentProfile(); renderProfileBar(); closeSettings(); showToast('Settings saved ✓'); resetInactivityTimer(); registerPushSW();
 }
 
 function renderProfilesTab() {
@@ -7983,6 +7984,8 @@ function init() {
   setProfileBarOpen(store.get('profilebar_open') === '1', false);
   setChatControlsOpen(store.get('chatcontrols_open') === '1', false);
   if(!messages.length) sendGreeting();
+  registerPushSW();
+  checkPendingMessage();
   // G1 fix: fetch world context on startup if keys are already configured,
   // so users don't need to re-save settings to get weather/news on cold start
   if (config.owmApiKey) fetchWeatherAndAir();
@@ -8543,6 +8546,87 @@ function checkAutoNote() {
   if (Date.now() >= next) generateNote(null);
 }
 
+// ── Push notifications ────────────────────────────────────────
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function buildContext() {
+  const snippets = messages
+    .filter(m => m.content && !m.isError && m.role !== 'system')
+    .slice(-8)
+    .map(m => `${m.role === 'user' ? 'user' : 'bot'}: ${(m.content || '').slice(0, 150)}`);
+  return {
+    botName: config.botName || 'Sam',
+    userName: config.userName || '',
+    affectionLevel: getAffectionLevel(affectionScore).label,
+    lastInteractionAt: parseInt(store.get(`lastturn_${activeProfileId}`) || '0') || Date.now(),
+    snippets
+  };
+}
+
+async function syncContext() {
+  const url = config.workerUrl?.trim();
+  if (!url) return;
+  try {
+    await fetch(url + '/context', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildContext())
+    });
+  } catch(e) {}
+}
+
+async function setupPushSubscription(reg) {
+  if (!config.workerUrl?.trim()) return;
+  if (!('PushManager' in window)) return;
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') return;
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) { syncContext(); return; }
+  const base = config.workerUrl.trim();
+  const res = await fetch(base + '/vapid-public-key');
+  const { publicKey } = await res.json();
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey)
+  });
+  await fetch(base + '/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscription: sub, context: buildContext() })
+  });
+}
+
+async function registerPushSW() {
+  if (!config.workerUrl?.trim()) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    await setupPushSubscription(reg);
+  } catch(e) {
+    console.warn('[Push] setup failed:', e);
+  }
+}
+
+async function checkPendingMessage() {
+  const url = config.workerUrl?.trim();
+  if (!url) return;
+  try {
+    const res = await fetch(url + '/pending');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.message) return;
+    const botMsg = { id: genId(), role: 'assistant', content: data.message, timestamp: Date.now() };
+    messages.push(botMsg); appendMessage(botMsg); saveCurrentProfile(); updateLastSeen();
+    await fetch(url + '/pending', { method: 'POST' });
+  } catch(e) {}
+}
+
 // Phase 3: async entry point — waits for IDB cache to load before rendering
 (async () => { await store.init(); init(); })();
 </script>
@@ -8648,64 +8732,7 @@ function checkAutoNote() {
 
   // ── 4. Service worker (HTTPS / localhost only) ───────
   if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'saemi-v6.9.0';
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.add(self.location.href)).catch(()=>{}));
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res && res.status === 200 && res.type === 'basic') {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      }).catch(() => caches.match(self.location.href));
-    })
-  );
-});
-// Show notification posted from the app
-self.addEventListener('message', e => {
-  if (e.data?.type !== 'SHOW_NOTIFICATION') return;
-  const { title, body, icon } = e.data;
-  e.waitUntil(
-    self.registration.showNotification(title || 'SÆMi', {
-      body: body || '…',
-      icon: icon || undefined,
-      badge: icon || undefined,
-      tag: 'saemi-msg',
-      renotify: true,
-      vibrate: [200, 100, 200],
-      data: { url: self.location.href },
-    })
-  );
-});
-// Tap notification → focus or open the app
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const c of list) {
-        if (c.url === e.notification.data?.url && 'focus' in c) return c.focus();
-      }
-      return clients.openWindow(e.notification.data?.url || self.location.href);
-    })
-  );
-});`;
-    const swBlob = new Blob([swCode], { type: 'application/javascript' });
-    navigator.serviceWorker.register(URL.createObjectURL(swBlob), { scope: './' })
+    navigator.serviceWorker.register('./sw.js')
       .catch(() => {}); // silent fail on file:// / content://
   }
 
